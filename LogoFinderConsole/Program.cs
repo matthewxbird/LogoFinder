@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using HtmlAgilityPack;
 
@@ -10,7 +13,7 @@ namespace LogoFinderConsole
     {
         static void Main(string[] args)
         {
-            const string TARGET = "https://www.myringgo.co.uk/";
+            const string TARGET = "https://www.shell.co.uk/";
 
             HttpClient httpClient = new HttpClient();
             var uri = new Uri(TARGET);
@@ -23,17 +26,61 @@ namespace LogoFinderConsole
 
             doc.Load(page, true);
 
-            Console.WriteLine($"Found: {getMetaOgImage(doc)}");
-            Console.WriteLine($"Found: {getAppleTouchIcons(doc)}");
-            Console.WriteLine($"Found: {getAllAnchors(doc, TARGET)}");
-            Console.WriteLine($"Found: {getAsIcon(doc)}");
+            var possibleLogos = new List<string>();
+            possibleLogos.AddRange(getMetaOgImage(doc));
+            possibleLogos.AddRange(getAppleTouchIcons(doc));
+            possibleLogos.AddRange(getAllAnchors(doc, TARGET));
+            possibleLogos.AddRange(getAsIcon(doc));
 
+            Console.WriteLine($"We found the following possible logos: {string.Join(',', possibleLogos)}");
+
+            DownloadLogos(TARGET, possibleLogos);
+
+            Console.WriteLine("Press the any key to finish");
             Console.Read();
         }
 
-        private static string getMetaOgImage(HtmlDocument doc)
+        private static void DownloadLogos(string target, IList<string> possibles)
+        {
+            DirectoryInfo dir = new DirectoryInfo("Logos");
+            if (dir.Exists)
+            {
+                dir.Delete(true);
+            }
+
+            dir.Create();
+
+            using (var client = new WebClient())
+            {
+                foreach (var possible in possibles)
+                {
+                    string downloadUri = string.Empty;
+                    if (possible.StartsWith("https"))
+                    {
+                        downloadUri = possible;
+                    }
+                    else
+                    {
+                        downloadUri = target + possible;
+                    }
+
+                    var uri = new Uri(downloadUri);
+                    var filename = uri.Segments.Last();
+                    var writeLocation = Path.Combine(dir.FullName, filename);
+
+                    Console.WriteLine($"Attempting to download: {uri}");
+                    client.DownloadFile(uri, writeLocation);
+                }
+            }
+
+            Console.WriteLine("Completed downloads!");
+        }
+
+        private static IList<string> getMetaOgImage(HtmlDocument doc)
         {
             HtmlNodeCollection metaNodes = doc.DocumentNode.SelectNodes("//head//meta");
+
+            IList<string> possibilities = new List<string>();
 
             foreach (var metaNode in metaNodes)
             {
@@ -41,15 +88,15 @@ namespace LogoFinderConsole
                 {
                     if (attribute.Name == "property" && attribute.Value == "og:image")
                     {
-                        return metaNode.Attributes.First(x => x.Name == "content").Value;
+                        possibilities.Add(metaNode.Attributes.First(x => x.Name == "content").Value);
                     }
                 }
             }
 
-            return null;
+            return possibilities;
         }
 
-        private static string getAppleTouchIcons(HtmlDocument doc)
+        private static IList<string> getAppleTouchIcons(HtmlDocument doc)
         {
             IList<HtmlNode> linkNodes = doc.DocumentNode.Descendants("link").ToList();
 
@@ -67,10 +114,10 @@ namespace LogoFinderConsole
                 }
             }
 
-            return string.Join(",", possibles);
+            return possibles;
         }
 
-        private static string getAllAnchors(HtmlDocument doc, string self)
+        private static IList<string> getAllAnchors(HtmlDocument doc, string self)
         {
             IList<HtmlNode> anchorNodes = doc.DocumentNode.Descendants("a").ToList();
 
@@ -93,12 +140,10 @@ namespace LogoFinderConsole
                 }
             }
 
-            if (possiblities.Count == 0) return null;
-
-            return string.Join(',', possiblities);
+            return possiblities;
         }
 
-        public static string getAsIcon(HtmlDocument doc)
+        public static IList<string> getAsIcon(HtmlDocument doc)
         {
             IList<HtmlNode> nodes = doc.DocumentNode.SelectNodes("//head/link");
             IList<string> possibles = new List<string>();
@@ -114,7 +159,7 @@ namespace LogoFinderConsole
                 }
             }
 
-            return string.Join(",", possibles);
+            return possibles;
         }
     }
 
