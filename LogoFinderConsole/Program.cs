@@ -13,7 +13,7 @@ namespace LogoFinderConsole
     {
         static void Main(string[] args)
         {
-            const string TARGET = "https://www.shell.co.uk/";
+            const string TARGET = "https://www.johnlewis.com/";
 
             HttpClient httpClient = new HttpClient();
             var uri = new Uri(TARGET);
@@ -66,6 +66,11 @@ namespace LogoFinderConsole
 
                     var uri = new Uri(downloadUri);
                     var filename = uri.Segments.Last();
+                    if (!filename.Contains("."))
+                    {
+                        filename += "-assumed-.png";
+                    }
+
                     var writeLocation = Path.Combine(dir.FullName, filename);
 
                     Console.WriteLine($"Attempting to download: {uri}");
