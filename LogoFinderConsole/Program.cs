@@ -11,20 +11,22 @@ namespace LogoFinderConsole
 {
     class Program
     {
+        private static string spoofedAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36";
+
         static void Main(string[] args)
         {
-            string TARGET = "https://www.fatface.com/";
+            string TARGET = "https://www.blacks.co.uk/";
 
             TARGET = TARGET.TrimEnd('/');
 
             HttpClient httpClient = new HttpClient();
+
+            httpClient.DefaultRequestHeaders.Add("User-Agent", spoofedAgent);
+
             var uri = new Uri(TARGET);
             var page = httpClient.GetStreamAsync(uri).Result;
 
-            HtmlDocument doc = new HtmlDocument
-            {
-                DisableServerSideCode = true
-            };
+            HtmlDocument doc = new HtmlDocument();
 
             doc.Load(page, true);
 
@@ -54,6 +56,7 @@ namespace LogoFinderConsole
 
             using (var client = new WebClient())
             {
+                client.Headers[HttpRequestHeader.UserAgent] = spoofedAgent;
                 foreach (var possible in possibles)
                 {
                     string downloadUri = string.Empty;
