@@ -10,18 +10,23 @@ namespace LogoFinderConsole
     {
         static void Main(string[] args)
         {
-            const string TARGET = "https://www.tesco.com/";
+            const string TARGET = "https://www.myringgo.co.uk/";
 
             HttpClient httpClient = new HttpClient();
+            var uri = new Uri(TARGET);
+            var page = httpClient.GetStreamAsync(uri).Result;
 
-            var pageStream = httpClient.GetStreamAsync(TARGET);
+            HtmlDocument doc = new HtmlDocument
+            {
+                DisableServerSideCode = true
+            };
 
-            HtmlDocument doc = new HtmlDocument();
-            doc.Load(pageStream.Result);
+            doc.Load(page, true);
 
             Console.WriteLine($"Found: {getMetaOgImage(doc)}");
             Console.WriteLine($"Found: {getAppleTouchIcons(doc)}");
             Console.WriteLine($"Found: {getAllAnchors(doc, TARGET)}");
+            Console.WriteLine($"Found: {getAsIcon(doc)}");
 
             Console.Read();
         }
@@ -48,7 +53,7 @@ namespace LogoFinderConsole
         {
             IList<HtmlNode> linkNodes = doc.DocumentNode.Descendants("link").ToList();
 
-            HtmlNode lastFound = null;
+            IList<string> possibles = new List<string>();
 
             foreach (var linkNode in linkNodes)
             {
@@ -56,17 +61,13 @@ namespace LogoFinderConsole
                 {
                     if (attribute.Name == "rel" && attribute.Value == "apple-touch-icon")
                     {
-                        lastFound = linkNode;
+                        var link = linkNode.Attributes.First(x => x.Name == "href").Value;
+                        possibles.Add(link);
                     }
                 }
             }
 
-            if (lastFound != null)
-            {
-                return lastFound.Attributes.First(x => x.Name == "href").Value;
-            }
-
-            return null;
+            return string.Join(",", possibles);
         }
 
         private static string getAllAnchors(HtmlDocument doc, string self)
@@ -79,7 +80,7 @@ namespace LogoFinderConsole
             {
                 foreach (var attribute in anchorNode.Attributes)
                 {
-                    if (attribute.Name == "href" && (attribute.Value == "/" || attribute.Value == self.TrimEnd('/')))
+                    if (attribute.Name == "href" && (attribute.Value == "/" || attribute.Value == self))
                     {
                         foreach (var possibleImageNode in anchorNode.ChildNodes)
                         {
@@ -95,6 +96,25 @@ namespace LogoFinderConsole
             if (possiblities.Count == 0) return null;
 
             return string.Join(',', possiblities);
+        }
+
+        public static string getAsIcon(HtmlDocument doc)
+        {
+            IList<HtmlNode> nodes = doc.DocumentNode.SelectNodes("//head/link");
+            IList<string> possibles = new List<string>();
+            foreach (var node in nodes)
+            {
+                foreach (var attribute in node.Attributes)
+                {
+                    if (attribute.Name == "rel" && attribute.Value == "icon")
+                    {
+                        var link = node.Attributes.First(x => x.Name == "href").Value;
+                        possibles.Add(link);
+                    }
+                }
+            }
+
+            return string.Join(",", possibles);
         }
     }
 
