@@ -13,7 +13,9 @@ namespace LogoFinderConsole
     {
         static void Main(string[] args)
         {
-            const string TARGET = "https://www.johnlewis.com/";
+            string TARGET = "https://www.fatface.com/";
+
+            TARGET = TARGET.TrimEnd('/');
 
             HttpClient httpClient = new HttpClient();
             var uri = new Uri(TARGET);
