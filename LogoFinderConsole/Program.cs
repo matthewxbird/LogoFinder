@@ -40,6 +40,8 @@ namespace LogoFinderConsole
             possibleLogos.AddRange(getAsIcon(nodes));
             possibleLogos.AddRange(getAllKeyWords(nodes, "logo"));
 
+            //possibleLogos.AddRange(getAllFromAnyStyleSheets(TARGET, nodes, "background-image", "logo"));
+
             Console.WriteLine($"We found the following possible logos: {string.Join(',', possibleLogos)}");
 
             DownloadLogos(TARGET, possibleLogos);
@@ -197,6 +199,44 @@ namespace LogoFinderConsole
 
             return possibles;
         }
+
+        //public static IList<string> getAllFromAnyStyleSheets(string target, IList<HtmlNode> nodes, string property, string keyword)
+        //{
+        //    var links = nodes.Where(x => x.Name == "link");
+        //    var stylesheetUris = new List<string>();
+
+        //    foreach (var link in links)
+        //    {
+        //        foreach (var attribute in link.Attributes)
+        //        {
+        //            if (attribute.Name == "rel" && attribute.Value == "stylesheet")
+        //            {
+        //                stylesheetUris.Add(link.Attributes.First(x => x.Name == "href").Value);
+        //            }
+        //        }
+        //    }
+
+        //    HttpClient httpClient = new HttpClient();
+
+        //    httpClient.DefaultRequestHeaders.Add("User-Agent", spoofedAgent);
+        //    httpClient.DefaultRequestHeaders.Add("cache-control", "no-cache");
+        //    httpClient.DefaultRequestHeaders.Add("pragma", "no-cache");
+        //    httpClient.DefaultRequestHeaders.Add("referer", "https://www.google.co.uk");
+
+        //    IList<string> downloadedStylesheet = new List<string>();
+
+        //    foreach (var stylesheet in stylesheetUris)
+        //    {
+        //        var uri = new Uri(target + stylesheet);
+        //        var page = httpClient.GetStringAsync(uri).Result;
+        //        downloadedStylesheet.Add(page);
+        //    }
+
+        //    Console.WriteLine("test");
+
+        //    return null;
+        //}
+
 
         private static IList<HtmlNode> GetNodesRecursively(HtmlNode node)
         {
