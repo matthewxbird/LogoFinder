@@ -22,6 +22,9 @@ namespace LogoFinderConsole
             HttpClient httpClient = new HttpClient();
 
             httpClient.DefaultRequestHeaders.Add("User-Agent", spoofedAgent);
+            httpClient.DefaultRequestHeaders.Add("cache-control", "no-cache");
+            httpClient.DefaultRequestHeaders.Add("pragma", "no-cache");
+            httpClient.DefaultRequestHeaders.Add("referer", "https://www.google.co.uk");
 
             var uri = new Uri(TARGET);
             var page = httpClient.GetStreamAsync(uri).Result;
@@ -57,6 +60,10 @@ namespace LogoFinderConsole
             using (var client = new WebClient())
             {
                 client.Headers[HttpRequestHeader.UserAgent] = spoofedAgent;
+                client.Headers[HttpRequestHeader.Referer] = "https://www.google.co.uk";
+                client.Headers["pragma"] = "no-cache";
+                client.Headers[HttpRequestHeader.CacheControl] = "no-cache";
+
                 foreach (var possible in possibles)
                 {
                     string downloadUri = string.Empty;
