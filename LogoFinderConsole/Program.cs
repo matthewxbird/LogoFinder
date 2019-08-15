@@ -15,7 +15,7 @@ namespace LogoFinderConsole
 
         static void Main(string[] args)
         {
-            string TARGET = "https://www.blacks.co.uk/";
+            string TARGET = "https://www.rsagroup.com/";
 
             TARGET = TARGET.TrimEnd('/');
 
@@ -32,12 +32,13 @@ namespace LogoFinderConsole
             HtmlDocument doc = new HtmlDocument();
 
             doc.Load(page, true);
-
+            IList<HtmlNode> nodes = GetNodesRecursively(doc.DocumentNode);
             var possibleLogos = new List<string>();
-            possibleLogos.AddRange(getMetaOgImage(doc));
-            possibleLogos.AddRange(getAppleTouchIcons(doc));
-            possibleLogos.AddRange(getAllAnchors(doc, TARGET));
-            possibleLogos.AddRange(getAsIcon(doc));
+            possibleLogos.AddRange(getMetaOgImage(nodes));
+            possibleLogos.AddRange(getAppleTouchIcons(nodes));
+            possibleLogos.AddRange(getAllAnchors(nodes, TARGET));
+            possibleLogos.AddRange(getAsIcon(nodes));
+            possibleLogos.AddRange(getAllKeyWords(nodes, "logo"));
 
             Console.WriteLine($"We found the following possible logos: {string.Join(',', possibleLogos)}");
 
@@ -78,34 +79,40 @@ namespace LogoFinderConsole
 
                     var uri = new Uri(downloadUri);
                     var filename = uri.Segments.Last();
+                    filename = filename.Replace("/", "");
                     if (!filename.Contains("."))
                     {
-                        filename += "-assumed-.png";
+                        filename += "_assumed.png";
                     }
 
                     var writeLocation = Path.Combine(dir.FullName, filename);
 
                     Console.WriteLine($"Attempting to download: {uri}");
-                    client.DownloadFile(uri, writeLocation);
+                    try
+                    {
+                        client.DownloadFile(uri, writeLocation);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Something didn't work: " + e.Message);
+                    }
                 }
             }
 
             Console.WriteLine("Completed downloads!");
         }
 
-        private static IList<string> getMetaOgImage(HtmlDocument doc)
+        private static IList<string> getMetaOgImage(IList<HtmlNode> nodes)
         {
-            HtmlNodeCollection metaNodes = doc.DocumentNode.SelectNodes("//head//meta");
-
             IList<string> possibilities = new List<string>();
 
-            foreach (var metaNode in metaNodes)
+            foreach (var node in nodes)
             {
-                foreach (var attribute in metaNode.Attributes)
+                foreach (var attribute in node.Attributes)
                 {
                     if (attribute.Name == "property" && attribute.Value == "og:image")
                     {
-                        possibilities.Add(metaNode.Attributes.First(x => x.Name == "content").Value);
+                        possibilities.Add(node.Attributes.First(x => x.Name == "content").Value);
                     }
                 }
             }
@@ -113,19 +120,17 @@ namespace LogoFinderConsole
             return possibilities;
         }
 
-        private static IList<string> getAppleTouchIcons(HtmlDocument doc)
+        private static IList<string> getAppleTouchIcons(IList<HtmlNode> nodes)
         {
-            IList<HtmlNode> linkNodes = doc.DocumentNode.Descendants("link").ToList();
-
             IList<string> possibles = new List<string>();
 
-            foreach (var linkNode in linkNodes)
+            foreach (var node in nodes)
             {
-                foreach (var attribute in linkNode.Attributes)
+                foreach (var attribute in node.Attributes)
                 {
                     if (attribute.Name == "rel" && attribute.Value == "apple-touch-icon")
                     {
-                        var link = linkNode.Attributes.First(x => x.Name == "href").Value;
+                        var link = node.Attributes.First(x => x.Name == "href").Value;
                         possibles.Add(link);
                     }
                 }
@@ -134,19 +139,17 @@ namespace LogoFinderConsole
             return possibles;
         }
 
-        private static IList<string> getAllAnchors(HtmlDocument doc, string self)
+        private static IList<string> getAllAnchors(IList<HtmlNode> nodes, string self)
         {
-            IList<HtmlNode> anchorNodes = doc.DocumentNode.Descendants("a").ToList();
-
             IList<string> possiblities = new List<string>();
 
-            foreach (var anchorNode in anchorNodes)
+            foreach (var node in nodes)
             {
-                foreach (var attribute in anchorNode.Attributes)
+                foreach (var attribute in node.Attributes)
                 {
                     if (attribute.Name == "href" && (attribute.Value == "/" || attribute.Value == self))
                     {
-                        foreach (var possibleImageNode in anchorNode.ChildNodes)
+                        foreach (var possibleImageNode in node.ChildNodes)
                         {
                             if (possibleImageNode.Name == "img")
                             {
@@ -160,9 +163,8 @@ namespace LogoFinderConsole
             return possiblities;
         }
 
-        public static IList<string> getAsIcon(HtmlDocument doc)
+        public static IList<string> getAsIcon(IList<HtmlNode> nodes)
         {
-            IList<HtmlNode> nodes = doc.DocumentNode.SelectNodes("//head/link");
             IList<string> possibles = new List<string>();
             foreach (var node in nodes)
             {
@@ -177,6 +179,38 @@ namespace LogoFinderConsole
             }
 
             return possibles;
+        }
+
+        public static IList<string> getAllKeyWords(IList<HtmlNode> nodes, string keyword)
+        {
+            IList<string> possibles = new List<string>();
+            foreach (var node in nodes)
+            {
+                foreach (var attribute in node.Attributes)
+                {
+                    if (attribute.Value.Contains('.') && attribute.Value.Contains(keyword, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        possibles.Add(attribute.Value);
+                    }
+                }
+            }
+
+            return possibles;
+        }
+
+        private static IList<HtmlNode> GetNodesRecursively(HtmlNode node)
+        {
+            List<HtmlNode> nodes = new List<HtmlNode>
+            {
+                node
+            };
+
+            foreach (HtmlNode child in node.ChildNodes)
+            {
+                nodes.AddRange(GetNodesRecursively(child));
+            }
+
+            return nodes;
         }
     }
 
