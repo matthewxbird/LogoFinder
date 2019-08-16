@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using ExCSS;
 using HtmlAgilityPack;
 
 namespace LogoFinderConsole
@@ -15,9 +15,7 @@ namespace LogoFinderConsole
 
         static void Main(string[] args)
         {
-            string TARGET = "URLHERE";
-
-            TARGET = TARGET.TrimEnd('/');
+            string TARGET = "https://www.overclockers.co.uk/";
 
             HttpClient httpClient = new HttpClient();
 
@@ -40,7 +38,7 @@ namespace LogoFinderConsole
             possibleLogos.AddRange(getAsIcon(nodes));
             possibleLogos.AddRange(getAllKeyWords(nodes, "logo"));
 
-            //possibleLogos.AddRange(getAllFromAnyStyleSheets(TARGET, nodes, "background-image", "logo"));
+            possibleLogos.AddRange(getAllFromAnyStyleSheets(TARGET, nodes, "background-image", "logo"));
 
             Console.WriteLine($"We found the following possible logos: {string.Join(',', possibleLogos)}");
 
@@ -76,6 +74,15 @@ namespace LogoFinderConsole
                     }
                     else
                     {
+                        if (target.EndsWith("/") && possible.StartsWith("/"))
+                        {
+                            target = target.TrimEnd('/');
+                        }
+                        else if (!target.EndsWith("/") && !possible.StartsWith("/"))
+                        {
+                            target += "/";
+                        }
+
                         downloadUri = target + possible;
                     }
 
@@ -143,6 +150,11 @@ namespace LogoFinderConsole
 
         private static IList<string> getAllAnchors(IList<HtmlNode> nodes, string self)
         {
+            if (self.EndsWith("/"))
+            {
+                self = self.TrimEnd('/');
+            }
+
             IList<string> possiblities = new List<string>();
 
             foreach (var node in nodes)
@@ -200,42 +212,79 @@ namespace LogoFinderConsole
             return possibles;
         }
 
-        //public static IList<string> getAllFromAnyStyleSheets(string target, IList<HtmlNode> nodes, string property, string keyword)
-        //{
-        //    var links = nodes.Where(x => x.Name == "link");
-        //    var stylesheetUris = new List<string>();
+        public static IList<string> getAllFromAnyStyleSheets(string target, IList<HtmlNode> nodes, string property, string keyword)
+        {
+            var links = nodes.Where(x => x.Name == "link");
+            var stylesheetUris = new List<string>();
 
-        //    foreach (var link in links)
-        //    {
-        //        foreach (var attribute in link.Attributes)
-        //        {
-        //            if (attribute.Name == "rel" && attribute.Value == "stylesheet")
-        //            {
-        //                stylesheetUris.Add(link.Attributes.First(x => x.Name == "href").Value);
-        //            }
-        //        }
-        //    }
+            foreach (var link in links)
+            {
+                foreach (var attribute in link.Attributes)
+                {
+                    if (attribute.Name == "rel" && attribute.Value == "stylesheet")
+                    {
+                        stylesheetUris.Add(link.Attributes.First(x => x.Name == "href").Value);
+                    }
+                }
+            }
 
-        //    HttpClient httpClient = new HttpClient();
+            HttpClient httpClient = new HttpClient();
 
-        //    httpClient.DefaultRequestHeaders.Add("User-Agent", spoofedAgent);
-        //    httpClient.DefaultRequestHeaders.Add("cache-control", "no-cache");
-        //    httpClient.DefaultRequestHeaders.Add("pragma", "no-cache");
-        //    httpClient.DefaultRequestHeaders.Add("referer", "https://www.google.co.uk");
+            httpClient.DefaultRequestHeaders.Add("User-Agent", spoofedAgent);
+            httpClient.DefaultRequestHeaders.Add("cache-control", "no-cache");
+            httpClient.DefaultRequestHeaders.Add("pragma", "no-cache");
+            httpClient.DefaultRequestHeaders.Add("referer", "https://www.google.co.uk");
 
-        //    IList<string> downloadedStylesheet = new List<string>();
+            IList<Stylesheet> stylesheets = new List<Stylesheet>();
 
-        //    foreach (var stylesheet in stylesheetUris)
-        //    {
-        //        var uri = new Uri(target + stylesheet);
-        //        var page = httpClient.GetStringAsync(uri).Result;
-        //        downloadedStylesheet.Add(page);
-        //    }
+            var parser = new StylesheetParser();
 
-        //    Console.WriteLine("test");
+            foreach (var stylesheet in stylesheetUris)
+            {
+                var uri = new Uri(target + stylesheet);
+                if (stylesheet.StartsWith("https"))
+                {
+                    uri = new Uri(stylesheet);
+                }
+                try
+                {
+                    var stylesheetStream = httpClient.GetStreamAsync(uri).Result;
 
-        //    return null;
-        //}
+                    var parsedStyledSheet = parser.Parse(stylesheetStream);
+
+                    stylesheets.Add(parsedStyledSheet);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Error occured getting stylesheet ", e.Message);
+                }
+            }
+
+            var possibleBackgrounds = new List<string>();
+
+            foreach (Stylesheet stylesheet in stylesheets)
+            {
+                foreach (IStylesheetNode stylesheetNode in stylesheet.Children)
+                {
+                    foreach (IStylesheetNode stylesheetSubNode in stylesheetNode.Children)
+                    {
+                        var styleDeclaration = stylesheetSubNode as StyleDeclaration;
+                        if (styleDeclaration != null && (styleDeclaration.BackgroundImage != "" && styleDeclaration.BackgroundImage != "initial" && styleDeclaration.BackgroundImage != "none" && !styleDeclaration.BackgroundImage.Contains("gradient")))
+                        {
+                            if (styleDeclaration.BackgroundImage.Contains("logo"))
+                            {
+                                var startTrimmed = styleDeclaration.BackgroundImage.Remove(0, 5);
+                                var endTrimmed = startTrimmed.Remove(startTrimmed.Length - 2, 2);
+                                possibleBackgrounds.Add(endTrimmed);
+                            }
+                        }
+
+                    }
+                }
+            }
+
+            return possibleBackgrounds;
+        }
 
 
         private static IList<HtmlNode> GetNodesRecursively(HtmlNode node)
