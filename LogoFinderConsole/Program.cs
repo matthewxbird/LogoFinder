@@ -15,7 +15,7 @@ namespace LogoFinderConsole
 
         static void Main(string[] args)
         {
-            string TARGET = "https://www.overclockers.co.uk/";
+            string TARGET = "https://www.pcspecialist.co.uk/";
 
             HttpClient httpClient = new HttpClient();
 
@@ -38,7 +38,7 @@ namespace LogoFinderConsole
             possibleLogos.AddRange(getAsIcon(nodes));
             possibleLogos.AddRange(getAllKeyWords(nodes, "logo"));
 
-            possibleLogos.AddRange(getAllFromAnyStyleSheets(TARGET, nodes, "background-image", "logo"));
+            possibleLogos.AddRange(getAllFromAnyStyleSheets(TARGET, nodes));
 
             Console.WriteLine($"We found the following possible logos: {string.Join(',', possibleLogos)}");
 
@@ -212,7 +212,7 @@ namespace LogoFinderConsole
             return possibles;
         }
 
-        public static IList<string> getAllFromAnyStyleSheets(string target, IList<HtmlNode> nodes, string property, string keyword)
+        public static IList<string> getAllFromAnyStyleSheets(string target, IList<HtmlNode> nodes)
         {
             var links = nodes.Where(x => x.Name == "link");
             var stylesheetUris = new List<string>();
@@ -269,7 +269,8 @@ namespace LogoFinderConsole
                     foreach (IStylesheetNode stylesheetSubNode in stylesheetNode.Children)
                     {
                         var styleDeclaration = stylesheetSubNode as StyleDeclaration;
-                        if (styleDeclaration != null && (styleDeclaration.BackgroundImage != "" && styleDeclaration.BackgroundImage != "initial" && styleDeclaration.BackgroundImage != "none" && !styleDeclaration.BackgroundImage.Contains("gradient")))
+                        if (styleDeclaration == null) continue;
+                        if (!string.IsNullOrEmpty(styleDeclaration.BackgroundImage) && !styleDeclaration.BackgroundImage.StartsWith("in") && styleDeclaration.BackgroundImage != "none" && !styleDeclaration.BackgroundImage.Contains("gradient"))
                         {
                             if (styleDeclaration.BackgroundImage.Contains("logo"))
                             {
@@ -278,7 +279,6 @@ namespace LogoFinderConsole
                                 possibleBackgrounds.Add(endTrimmed);
                             }
                         }
-
                     }
                 }
             }

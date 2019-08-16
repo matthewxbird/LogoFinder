@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.29102.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogoFinderConsole", "LogoFinderConsole.csproj", "{99197035-9626-4CA2-8632-67731F684173}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExCSS", "..\ExCSS\ExCSS.csproj", "{8EDFEECE-99E4-47B3-9108-CAE16D1F289A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExCSS.Tests", "..\ExCSS.Tests\ExCSS.Tests.csproj", "{8DEA3454-CA6D-4B5B-8195-0BACB9C878C7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{99197035-9626-4CA2-8632-67731F684173}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99197035-9626-4CA2-8632-67731F684173}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99197035-9626-4CA2-8632-67731F684173}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8EDFEECE-99E4-47B3-9108-CAE16D1F289A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8EDFEECE-99E4-47B3-9108-CAE16D1F289A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8EDFEECE-99E4-47B3-9108-CAE16D1F289A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8EDFEECE-99E4-47B3-9108-CAE16D1F289A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DEA3454-CA6D-4B5B-8195-0BACB9C878C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DEA3454-CA6D-4B5B-8195-0BACB9C878C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DEA3454-CA6D-4B5B-8195-0BACB9C878C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DEA3454-CA6D-4B5B-8195-0BACB9C878C7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

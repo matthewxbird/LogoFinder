@@ -5,3 +5,6 @@
 /LogoFinderConsole/bin
 /LogoFinderConsole/obj
 /LogoFinderConsole/.vs
+/ExCSS/bin/Debug/netcoreapp2.2
+/ExCSS.Tests/bin/Debug/netcoreapp2.2
+/ExCSS.Tests/obj

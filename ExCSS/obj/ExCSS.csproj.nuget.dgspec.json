@@ -1,0 +1,61 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\development\\Personal\\LogoFinder\\ExCSS\\ExCSS.csproj": {}
+  },
+  "projects": {
+    "C:\\development\\Personal\\LogoFinder\\ExCSS\\ExCSS.csproj": {
+      "version": "3.0.0-beta1-20170822",
+      "restore": {
+        "projectUniqueName": "C:\\development\\Personal\\LogoFinder\\ExCSS\\ExCSS.csproj",
+        "projectName": "ExCSS",
+        "projectPath": "C:\\development\\Personal\\LogoFinder\\ExCSS\\ExCSS.csproj",
+        "packagesPath": "C:\\Users\\matt.bird\\.nuget\\packages\\",
+        "outputPath": "C:\\development\\Personal\\LogoFinder\\ExCSS\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\matt.bird\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "netcoreapp2.2"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {},
+          "https://bizfitech.pkgs.visualstudio.com/_packaging/OpenWorks/nuget/v3/index.json": {}
+        },
+        "frameworks": {
+          "netcoreapp2.2": {
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "netcoreapp2.2": {
+          "dependencies": {
+            "Microsoft.NETCore.App": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[2.2.0, )",
+              "autoReferenced": true
+            }
+          },
+          "imports": [
+            "net461"
+          ],
+          "assetTargetFallback": true,
+          "warn": true
+        }
+      }
+    }
+  }
+}
