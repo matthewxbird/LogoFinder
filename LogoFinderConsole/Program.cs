@@ -15,7 +15,7 @@ namespace LogoFinderConsole
 
         static void Main(string[] args)
         {
-            string TARGET = "https://www.rsagroup.com/";
+            string TARGET = "URLHERE";
 
             TARGET = TARGET.TrimEnd('/');
 
