@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using ExCSS;
 using HtmlAgilityPack;
 
@@ -37,15 +39,23 @@ namespace LogoFinderConsole
             possibleLogos.AddRange(getAllAnchors(nodes, TARGET));
             possibleLogos.AddRange(getAsIcon(nodes));
             possibleLogos.AddRange(getAllKeyWords(nodes, "logo"));
-
             possibleLogos.AddRange(getAllFromAnyStyleSheets(TARGET, nodes));
 
             Console.WriteLine($"We found the following possible logos: {string.Join(',', possibleLogos)}");
 
             DownloadLogos(TARGET, possibleLogos);
 
+            OpenInExplorer(@"C:\development\Personal\LogoFinder\LogoFinderConsole\bin\Debug\netcoreapp2.2\Logos\");
+
             Console.WriteLine("Press the any key to finish");
             Console.Read();
+        }
+
+        static void OpenInExplorer(string path)
+        {
+            string cmd = "explorer.exe";
+            string arg = "/select, " + path;
+            Process.Start(cmd, arg);
         }
 
         private static void DownloadLogos(string target, IList<string> possibles)
