@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -16,10 +15,25 @@ namespace LogoFinderConsole
 
         static void Main(string[] args)
         {
-            var merchants = GarysJankThing.Main("../../../merchants.csv");
+            var allMerchants = GarysJankThing.Load("../../../merchants.csv");
+            var distinctMerchants = allMerchants.Distinct().OrderBy(x => x.Name);
+            var distinctMerchantList = distinctMerchants.ToList();
+            Console.WriteLine($"Total Merchants: {distinctMerchantList.Count}");
 
-            foreach (var merchant in merchants)
+            for (int i = 0; i < distinctMerchantList.Count; i++)
             {
+                var merchant = distinctMerchantList[i];
+
+                Console.WriteLine($"Attemping to find {merchant.Name} -- {i} of {distinctMerchantList.Count}");
+
+                CreateFolderStructure(merchant.Name);
+                merchant.Uri = GarysJankThing.RunSetOfTests(merchant.Name);
+                if (merchant.Uri == null)
+                {
+                    Console.WriteLine("Didn't find uri for " + merchant.Name);
+                    continue;
+                }
+
                 HttpClient httpClient = new HttpClient();
 
                 httpClient.DefaultRequestHeaders.Add("User-Agent", spoofedAgent);
@@ -51,8 +65,7 @@ namespace LogoFinderConsole
             Console.Read();
         }
 
-
-        private static void DownloadLogos(string name, string target, IList<string> possibles)
+        private static void CreateFolderStructure(string name)
         {
             DirectoryInfo dir = new DirectoryInfo("Logos");
             if (!dir.Exists)
@@ -63,9 +76,19 @@ namespace LogoFinderConsole
             DirectoryInfo merchantDir = new DirectoryInfo($"Logos\\{name}");
             if (merchantDir.Exists)
             {
-                merchantDir.Delete();
+                merchantDir.Delete(true);
             }
             merchantDir.Create();
+        }
+
+        private static void DownloadLogos(string name, string target, IList<string> possibles)
+        {
+            DirectoryInfo merchantDir = new DirectoryInfo($"Logos\\{name}");
+            if (!merchantDir.Exists)
+            {
+                Console.WriteLine("Error!! Merchant folder did not exist!!");
+                return;
+            }
 
             using (var client = new WebClient())
             {

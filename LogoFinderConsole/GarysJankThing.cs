@@ -10,61 +10,51 @@ namespace LogoFinderConsole
 {
     static class GarysJankThing
     {
-        public static IList<Merchant> Main(string csvLocation)
+        public static IList<Merchant> Load(string csvLocation)
         {
-            IList<Merchant> listOfFoundMerchants = new List<Merchant>();
-
             using (var reader = new StreamReader(csvLocation))
             using (var csv = new CsvReader(reader))
             {
                 csv.Configuration.HeaderValidated = null;
                 csv.Configuration.MissingFieldFound = null;
-                List<Merchant> merchants = csv.GetRecords<Merchant>().ToList();
-                int totalMerchants = merchants.Count;
+                return csv.GetRecords<Merchant>().ToList();
+            }
+        }
 
-                foreach (Merchant merchant in merchants)
-                {
-                    string httpscouk = RunTest(merchant.Name, false, true);
-                    if (httpscouk != null)
-                    {
-                        listOfFoundMerchants.Add(new Merchant(merchant.Name, httpscouk));
-                        Console.WriteLine($"{httpscouk} found! Adding to list");
-                        continue;
-                    }
-
-                    string httpcouk = RunTest(merchant.Name, false, false);
-                    if (httpcouk != null)
-                    {
-                        listOfFoundMerchants.Add(new Merchant(merchant.Name, httpcouk));
-                        Console.WriteLine($"{httpcouk} found! Adding to list");
-                        continue;
-                    }
-
-                    string httpscom = RunTest(merchant.Name, true, true);
-                    if (httpscom != null)
-                    {
-                        listOfFoundMerchants.Add(new Merchant(merchant.Name, httpscom));
-                        Console.WriteLine($"{httpscom} found! Adding to list");
-                        continue;
-                    }
-
-                    string httpcom = RunTest(merchant.Name, true, false);
-                    if (httpcom != null)
-                    {
-                        listOfFoundMerchants.Add(new Merchant(merchant.Name, httpcom));
-                        Console.WriteLine($"{httpcom} found! Adding to list");
-                        continue;
-                    }
-
-                    Console.WriteLine($"Website for {merchant.Name} NOT found! gg");
-                }
-
-                Console.WriteLine(
-                    $"JANK complete - Found {listOfFoundMerchants.Count} out of {totalMerchants}");
+        public static string RunSetOfTests(string name)
+        {
+            string found = RunTest(name, false, true);
+            if (found != null)
+            {
+                Console.WriteLine($"{found} found! Adding to list");
+                return found;
             }
 
-            return listOfFoundMerchants;
+            found = RunTest(name, false, false);
+            if (found != null)
+            {
+                Console.WriteLine($"{found} found! Adding to list");
+                return found;
+            }
+
+            found = RunTest(name, true, true);
+            if (found != null)
+            {
+                Console.WriteLine($"{found} found! Adding to list");
+                return found;
+            }
+
+            found = RunTest(name, true, false);
+            if (found != null)
+            {
+                Console.WriteLine($"{found} found! Adding to list");
+                return found;
+            }
+
+            Console.WriteLine($"Website for {name} NOT found! gg");
+            return null;
         }
+
 
         public static string RunTest(string name, bool com, bool https)
         {
@@ -97,7 +87,7 @@ namespace LogoFinderConsole
         public static bool DoesWebsiteExist(string url)
         {
             HttpClient httpClient = new HttpClient();
-            httpClient.Timeout = TimeSpan.FromSeconds(5);
+            httpClient.Timeout = TimeSpan.FromSeconds(2);
             try
             {
                 HttpResponseMessage something =
