@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Reflection;
 using ExCSS;
 using HtmlAgilityPack;
 
@@ -17,56 +16,56 @@ namespace LogoFinderConsole
 
         static void Main(string[] args)
         {
-            string TARGET = "https://www.pcspecialist.co.uk/";
+            var merchants = GarysJankThing.Main("../../../merchants.csv");
 
-            HttpClient httpClient = new HttpClient();
+            foreach (var merchant in merchants)
+            {
+                HttpClient httpClient = new HttpClient();
 
-            httpClient.DefaultRequestHeaders.Add("User-Agent", spoofedAgent);
-            httpClient.DefaultRequestHeaders.Add("cache-control", "no-cache");
-            httpClient.DefaultRequestHeaders.Add("pragma", "no-cache");
-            httpClient.DefaultRequestHeaders.Add("referer", "https://www.google.co.uk");
+                httpClient.DefaultRequestHeaders.Add("User-Agent", spoofedAgent);
+                httpClient.DefaultRequestHeaders.Add("cache-control", "no-cache");
+                httpClient.DefaultRequestHeaders.Add("pragma", "no-cache");
+                httpClient.DefaultRequestHeaders.Add("referer", "https://www.google.co.uk");
 
-            var uri = new Uri(TARGET);
-            var page = httpClient.GetStreamAsync(uri).Result;
+                var uri = new Uri(merchant.Uri);
+                var page = httpClient.GetStreamAsync(uri).Result;
 
-            HtmlDocument doc = new HtmlDocument();
+                HtmlDocument doc = new HtmlDocument();
 
-            doc.Load(page, true);
-            IList<HtmlNode> nodes = GetNodesRecursively(doc.DocumentNode);
-            var possibleLogos = new List<string>();
-            possibleLogos.AddRange(getMetaOgImage(nodes));
-            possibleLogos.AddRange(getAppleTouchIcons(nodes));
-            possibleLogos.AddRange(getAllAnchors(nodes, TARGET));
-            possibleLogos.AddRange(getAsIcon(nodes));
-            possibleLogos.AddRange(getAllKeyWords(nodes, "logo"));
-            possibleLogos.AddRange(getAllFromAnyStyleSheets(TARGET, nodes));
+                doc.Load(page, true);
+                IList<HtmlNode> nodes = GetNodesRecursively(doc.DocumentNode);
+                var possibleLogos = new List<string>();
+                possibleLogos.AddRange(getMetaOgImage(nodes));
+                possibleLogos.AddRange(getAppleTouchIcons(nodes));
+                possibleLogos.AddRange(getAllAnchors(nodes, merchant.Uri));
+                possibleLogos.AddRange(getAsIcon(nodes));
+                possibleLogos.AddRange(getAllKeyWords(nodes, "logo"));
+                possibleLogos.AddRange(getAllFromAnyStyleSheets(merchant.Uri, nodes));
 
-            Console.WriteLine($"We found the following possible logos: {string.Join(',', possibleLogos)}");
+                Console.WriteLine($"We found the following possible logos: {string.Join(',', possibleLogos)}");
 
-            DownloadLogos(TARGET, possibleLogos);
-
-            OpenInExplorer(@"C:\development\Personal\LogoFinder\LogoFinderConsole\bin\Debug\netcoreapp2.2\Logos\");
+                DownloadLogos(merchant.Name, merchant.Uri, possibleLogos);
+            }
 
             Console.WriteLine("Press the any key to finish");
             Console.Read();
         }
 
-        static void OpenInExplorer(string path)
-        {
-            string cmd = "explorer.exe";
-            string arg = "/select, " + path;
-            Process.Start(cmd, arg);
-        }
 
-        private static void DownloadLogos(string target, IList<string> possibles)
+        private static void DownloadLogos(string name, string target, IList<string> possibles)
         {
             DirectoryInfo dir = new DirectoryInfo("Logos");
-            if (dir.Exists)
+            if (!dir.Exists)
             {
-                dir.Delete(true);
+                dir.Create();
             }
 
-            dir.Create();
+            DirectoryInfo merchantDir = new DirectoryInfo($"Logos\\{name}");
+            if (merchantDir.Exists)
+            {
+                merchantDir.Delete();
+            }
+            merchantDir.Create();
 
             using (var client = new WebClient())
             {
@@ -104,7 +103,7 @@ namespace LogoFinderConsole
                         filename += "_assumed.png";
                     }
 
-                    var writeLocation = Path.Combine(dir.FullName, filename);
+                    var writeLocation = Path.Combine(merchantDir.FullName, filename);
 
                     Console.WriteLine($"Attempting to download: {uri}");
                     try
