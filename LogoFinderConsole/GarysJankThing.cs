@@ -12,13 +12,21 @@ namespace LogoFinderConsole
     {
         public static IList<Merchant> Load(string csvLocation)
         {
+            List<Merchant> mechantList = new List<Merchant>();
             using (var reader = new StreamReader(csvLocation))
             using (var csv = new CsvReader(reader))
             {
                 csv.Configuration.HeaderValidated = null;
                 csv.Configuration.MissingFieldFound = null;
-                return csv.GetRecords<Merchant>().ToList();
+                mechantList.AddRange(csv.GetRecords<Merchant>().ToList());
             }
+
+            foreach (var merchant in mechantList)
+            {
+                merchant.Name = RemoveSpecialCharacters(merchant.Name);
+            }
+
+            return mechantList;
         }
 
         public static string RunSetOfTests(string name)

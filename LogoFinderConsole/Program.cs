@@ -6,6 +6,8 @@ using System.Net;
 using System.Net.Http;
 using ExCSS;
 using HtmlAgilityPack;
+using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace LogoFinderConsole
 {
@@ -15,53 +17,60 @@ namespace LogoFinderConsole
 
         static void Main(string[] args)
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             var allMerchants = GarysJankThing.Load("../../../merchants.csv");
             var distinctMerchants = allMerchants.Distinct().OrderBy(x => x.Name);
             var distinctMerchantList = distinctMerchants.ToList();
             Console.WriteLine($"Total Merchants: {distinctMerchantList.Count}");
 
-            for (int i = 0; i < distinctMerchantList.Count; i++)
-            {
-                var merchant = distinctMerchantList[i];
+            Parallel.For(0, distinctMerchantList.Count, new ParallelOptions { MaxDegreeOfParallelism = 8 }, i =>
+              {
+                  var merchant = distinctMerchantList[i];
 
-                Console.WriteLine($"Attemping to find {merchant.Name} -- {i} of {distinctMerchantList.Count}");
+                  Console.WriteLine($"Attemping to find {merchant.Name} -- {i} of {distinctMerchantList.Count}");
 
-                CreateFolderStructure(merchant.Name);
-                merchant.Uri = GarysJankThing.RunSetOfTests(merchant.Name);
-                if (merchant.Uri == null)
-                {
-                    Console.WriteLine("Didn't find uri for " + merchant.Name);
-                    continue;
-                }
+                  CreateFolderStructure(merchant.Name);
+                  merchant.Uri = GarysJankThing.RunSetOfTests(merchant.Name);
+                  if (merchant.Uri != null)
+                  {
+                      HttpClient httpClient = new HttpClient();
 
-                HttpClient httpClient = new HttpClient();
+                      httpClient.DefaultRequestHeaders.Add("User-Agent", spoofedAgent);
+                      httpClient.DefaultRequestHeaders.Add("cache-control", "no-cache");
+                      httpClient.DefaultRequestHeaders.Add("pragma", "no-cache");
+                      httpClient.DefaultRequestHeaders.Add("referer", "https://www.google.co.uk");
 
-                httpClient.DefaultRequestHeaders.Add("User-Agent", spoofedAgent);
-                httpClient.DefaultRequestHeaders.Add("cache-control", "no-cache");
-                httpClient.DefaultRequestHeaders.Add("pragma", "no-cache");
-                httpClient.DefaultRequestHeaders.Add("referer", "https://www.google.co.uk");
+                      var uri = new Uri(merchant.Uri);
+                      try
+                      {
+                          var page = httpClient.GetStreamAsync(uri).Result;
 
-                var uri = new Uri(merchant.Uri);
-                var page = httpClient.GetStreamAsync(uri).Result;
+                          HtmlDocument doc = new HtmlDocument();
 
-                HtmlDocument doc = new HtmlDocument();
+                          doc.Load(page, true);
+                          IList<HtmlNode> nodes = GetNodesRecursively(doc.DocumentNode);
+                          var possibleLogos = new List<string>();
+                          possibleLogos.AddRange(getMetaOgImage(nodes));
+                          possibleLogos.AddRange(getAppleTouchIcons(nodes));
+                          possibleLogos.AddRange(getAllAnchors(nodes, merchant.Uri));
+                          possibleLogos.AddRange(getAsIcon(nodes));
+                          possibleLogos.AddRange(getAllKeyWords(nodes, "logo"));
+                          possibleLogos.AddRange(getAllFromAnyStyleSheets(merchant.Uri, nodes));
 
-                doc.Load(page, true);
-                IList<HtmlNode> nodes = GetNodesRecursively(doc.DocumentNode);
-                var possibleLogos = new List<string>();
-                possibleLogos.AddRange(getMetaOgImage(nodes));
-                possibleLogos.AddRange(getAppleTouchIcons(nodes));
-                possibleLogos.AddRange(getAllAnchors(nodes, merchant.Uri));
-                possibleLogos.AddRange(getAsIcon(nodes));
-                possibleLogos.AddRange(getAllKeyWords(nodes, "logo"));
-                possibleLogos.AddRange(getAllFromAnyStyleSheets(merchant.Uri, nodes));
+                          Console.WriteLine($"We found the following possible logos: {string.Join(',', possibleLogos)}");
 
-                Console.WriteLine($"We found the following possible logos: {string.Join(',', possibleLogos)}");
+                          DownloadLogos(merchant.Name, merchant.Uri, possibleLogos);
+                      }
+                      catch (Exception e)
+                      {
+                          Console.WriteLine("some error occured", e.Message);
+                      }
+                  }
+              });
 
-                DownloadLogos(merchant.Name, merchant.Uri, possibleLogos);
-            }
-
-            Console.WriteLine("Press the any key to finish");
+            Console.WriteLine($"Press the any key to finish. Took {stopwatch.Elapsed}");
             Console.Read();
         }
 
@@ -72,6 +81,7 @@ namespace LogoFinderConsole
             {
                 dir.Create();
             }
+
 
             DirectoryInfo merchantDir = new DirectoryInfo($"Logos\\{name}");
             if (merchantDir.Exists)
